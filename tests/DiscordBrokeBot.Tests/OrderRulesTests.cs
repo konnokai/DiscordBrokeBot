@@ -40,6 +40,12 @@ public sealed class OrderRulesTests
     }
 
     [Fact]
+    public void Empty_order_note_is_allowed()
+    {
+        OrderRules.ValidateOrderText("item", "");
+    }
+
+    [Fact]
     public void Money_format_is_invariant_and_keeps_negative_sign()
     {
         Assert.Equal("123456", OrderRules.Money(123456));

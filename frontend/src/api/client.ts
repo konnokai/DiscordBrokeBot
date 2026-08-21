@@ -74,6 +74,22 @@ export async function apiMutation<T>(path: string, init: RequestInit): Promise<T
   })
 }
 
+export async function exchangeQuickLoginToken(token: string): Promise<void> {
+  let response: Response
+  try {
+    response = await fetch(apiUrl('/auth/quick-login'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    })
+  } catch {
+    throw new ApiError('無法連線至 API。請確認後端已啟動，或稍後再試。')
+  }
+
+  if (!response.ok) throw new ApiError(await readError(response), response.status)
+}
+
 export function loginUrl(): string | null {
   return configuredBaseUrl ? `${configuredBaseUrl}/auth/login` : null
 }

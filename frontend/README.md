@@ -14,7 +14,7 @@ pnpm dev
 
 - API 回傳的 Discord UID、訂單 ID、款項 ID 與所有金額都是 JSON string；數量是 JSON number。
 - `GET /api/orders?role=buyer|requester&archived=true|false` 回傳 `{ orders, summary }`。
-- 訂單明細回傳 `{ order, paymentEntries }`，並在 `order.permissions` 提供 API 已判定的操作權限。
+- 訂單明細回傳 `{ order, paymentEntries, activities }`，並在 `order.permissions` 提供 API 已判定的操作權限。
 - `GET /api/auth/csrf` 回傳 `{ token }`；所有修改請求均帶 `X-CSRF-Token`。
 - 寫入端點的 payload 與 `src/types/api.ts` 定義一致。收款模式為 `auto`、`force_completed`、`force_pending`。
 

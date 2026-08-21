@@ -2,14 +2,13 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiFetch, apiMutation } from '@/api/client'
+import { showToast } from '@/composables/toast'
 import { formatDate, formatTwd } from '@/utils/format'
 import type {
   OrderDetailResponse,
   PaymentEntry,
   PaymentPayload,
   PurchaseStatusPayload,
-  SettlementMode,
-  SettlementModePayload,
   UpdateOrderPayload,
 } from '@/types/api'
 
@@ -26,8 +25,6 @@ const router = useRouter()
 const detail = ref<OrderDetailResponse | null>(null)
 const loading = ref(false)
 const saving = ref(false)
-const error = ref('')
-const notice = ref('')
 const editingPaymentId = ref<string | null>(null)
 const draft = reactive<OrderDraft>({
   itemName: '',
@@ -37,6 +34,7 @@ const draft = reactive<OrderDraft>({
   stall: '',
 })
 const paymentDraft = reactive<PaymentPayload>({ amount: '', reason: '' })
+const paymentReasonOptions = ['商品款', '運費', '退款', '折抵', '其他']
 const orderId = computed(() => String(route.params.id))
 const editing = computed(() => route.name === 'order-edit')
 const order = computed(() => detail.value?.order ?? null)
@@ -50,17 +48,18 @@ function copyOrderToDraft(response: OrderDetailResponse): void {
 }
 
 /** API 載入失敗不清除既有明細或草稿，讓使用者在暫時斷線後仍可保留內容。 */
-async function loadOrder(): Promise<void> {
+async function loadOrder(): Promise<boolean> {
   loading.value = true
-  error.value = ''
   try {
     const response = await apiFetch<OrderDetailResponse>(
       `/api/orders/${encodeURIComponent(orderId.value)}`,
     )
     detail.value = response
     copyOrderToDraft(response)
+    return true
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : '無法載入訂單。'
+    showToast(reason instanceof Error ? reason.message : '無法載入訂單。', 'error')
+    return false
   } finally {
     loading.value = false
   }
@@ -76,12 +75,10 @@ function validateOrderDraft(): string | null {
 async function saveOrder(): Promise<void> {
   const validationError = validateOrderDraft()
   if (validationError) {
-    error.value = validationError
+    showToast(validationError, 'error')
     return
   }
   saving.value = true
-  error.value = ''
-  notice.value = ''
   try {
     const payload: UpdateOrderPayload = {
       itemName: draft.itemName.trim(),
@@ -94,11 +91,11 @@ async function saveOrder(): Promise<void> {
       method: 'PATCH',
       body: JSON.stringify(payload),
     })
-    await loadOrder()
-    notice.value = '訂單內容已儲存。'
+    if (!(await loadOrder())) return
+    showToast('訂單內容已儲存。')
     await router.replace({ name: 'order-detail', params: { id: orderId.value } })
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : '儲存訂單失敗。'
+    showToast(reason instanceof Error ? reason.message : '儲存訂單失敗。', 'error')
   } finally {
     saving.value = false
   }
@@ -110,10 +107,14 @@ async function updatePurchaseStatus(): Promise<void> {
   await updateBuyerAction('/purchase-status', payload, '購買狀態已更新。')
 }
 
-async function updateSettlementMode(event: Event): Promise<void> {
-  const mode = (event.target as HTMLSelectElement).value as SettlementMode
-  const payload: SettlementModePayload = { settlementMode: mode }
-  await updateBuyerAction('/settlement-mode', payload, '收款完成模式已更新。')
+async function toggleSettlementStatus(): Promise<void> {
+  if (!order.value) return
+  const settlementMode = order.value.isSettlementComplete ? 'force_pending' : 'force_completed'
+  await updateBuyerAction(
+    '/settlement-mode',
+    { settlementMode },
+    order.value.isSettlementComplete ? '已標記為未完成收款。' : '已標記為完成收款。',
+  )
 }
 
 /** 代購方專屬操作均在 API 成功後再重新載入，避免本機推測財務或狀態結果。 */
@@ -123,17 +124,15 @@ async function updateBuyerAction(
   successMessage: string,
 ): Promise<void> {
   saving.value = true
-  error.value = ''
-  notice.value = ''
   try {
     await apiMutation<void>(`/api/orders/${encodeURIComponent(orderId.value)}${path}`, {
       method: 'PUT',
       body: JSON.stringify(body),
     })
-    await loadOrder()
-    notice.value = successMessage
+    if (!(await loadOrder())) return
+    showToast(successMessage)
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : '更新失敗。'
+    showToast(reason instanceof Error ? reason.message : '更新失敗。', 'error')
   } finally {
     saving.value = false
   }
@@ -143,7 +142,6 @@ async function archiveOrRestore(): Promise<void> {
   if (!order.value) return
   const restoring = Boolean(order.value.archivedAt)
   saving.value = true
-  error.value = ''
   try {
     await apiMutation<void>(
       `/api/orders/${encodeURIComponent(orderId.value)}/${restoring ? 'restore' : 'archive'}`,
@@ -151,10 +149,10 @@ async function archiveOrRestore(): Promise<void> {
         method: 'POST',
       },
     )
-    notice.value = restoring ? '訂單已復原。' : '訂單已封存。'
+    showToast(restoring ? '訂單已復原。' : '訂單已封存。')
     await router.push({ name: restoring ? 'buying' : 'archived' })
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : '訂單狀態更新失敗。'
+    showToast(reason instanceof Error ? reason.message : '訂單狀態更新失敗。', 'error')
   } finally {
     saving.value = false
   }
@@ -164,7 +162,6 @@ function beginPaymentEdit(payment: PaymentEntry): void {
   editingPaymentId.value = payment.id
   paymentDraft.amount = payment.amount
   paymentDraft.reason = payment.reason
-  error.value = ''
 }
 
 function cancelPaymentEdit(): void {
@@ -182,12 +179,10 @@ function validatePayment(): string | null {
 async function savePayment(): Promise<void> {
   const validationError = validatePayment()
   if (validationError) {
-    error.value = validationError
+    showToast(validationError, 'error')
     return
   }
   saving.value = true
-  error.value = ''
-  notice.value = ''
   try {
     const body = JSON.stringify({ amount: paymentDraft.amount, reason: paymentDraft.reason.trim() })
     if (editingPaymentId.value) {
@@ -205,10 +200,10 @@ async function savePayment(): Promise<void> {
       })
     }
     cancelPaymentEdit()
-    await loadOrder()
-    notice.value = '款項紀錄已儲存。'
+    if (!(await loadOrder())) return
+    showToast('款項紀錄已儲存。')
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : '款項紀錄儲存失敗。'
+    showToast(reason instanceof Error ? reason.message : '款項紀錄儲存失敗。', 'error')
   } finally {
     saving.value = false
   }
@@ -217,15 +212,14 @@ async function savePayment(): Promise<void> {
 async function deletePayment(payment: PaymentEntry): Promise<void> {
   if (!window.confirm(`確定永久刪除「${payment.reason}」這筆款項紀錄？`)) return
   saving.value = true
-  error.value = ''
   try {
     await apiMutation<void>(`/api/payment-entries/${encodeURIComponent(payment.id)}`, {
       method: 'DELETE',
     })
-    await loadOrder()
-    notice.value = '款項紀錄已永久刪除。'
+    if (!(await loadOrder())) return
+    showToast('款項紀錄已永久刪除。')
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : '款項紀錄刪除失敗。'
+    showToast(reason instanceof Error ? reason.message : '款項紀錄刪除失敗。', 'error')
   } finally {
     saving.value = false
   }
@@ -233,8 +227,12 @@ async function deletePayment(payment: PaymentEntry): Promise<void> {
 
 async function blockRequester(): Promise<void> {
   if (!order.value) return
+  if (
+    !window.confirm(`確定封鎖「${order.value.requesterDisplayName}」嗎？封鎖後將無法建立新的訂單。`)
+  )
+    return
+
   saving.value = true
-  error.value = ''
   try {
     await apiMutation<void>(
       `/api/blocks/${encodeURIComponent(order.value.requesterDiscordUserId)}`,
@@ -242,9 +240,9 @@ async function blockRequester(): Promise<void> {
         method: 'POST',
       },
     )
-    notice.value = `已封鎖 ${order.value.requesterDisplayName} 的未來訂單請求。`
+    showToast(`已封鎖 ${order.value.requesterDisplayName} 的未來訂單請求。`)
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : '封鎖失敗。'
+    showToast(reason instanceof Error ? reason.message : '封鎖失敗。', 'error')
   } finally {
     saving.value = false
   }
@@ -256,8 +254,6 @@ watch(orderId, loadOrder, { immediate: true })
 <template>
   <section aria-labelledby="order-title">
     <p v-if="loading" class="notice" aria-live="polite">正在載入訂單。</p>
-    <p v-if="error" class="notice error" role="alert">{{ error }}</p>
-    <p v-if="notice" class="notice success" role="status">{{ notice }}</p>
 
     <template v-if="order">
       <div class="page-heading">
@@ -278,7 +274,12 @@ watch(orderId, loadOrder, { immediate: true })
       <form v-if="editing" class="form-grid" @submit.prevent="saveOrder">
         <label>物品名稱<input v-model="draft.itemName" required /></label>
         <label
-          >單價<input v-model="draft.unitPrice" inputmode="numeric" pattern="[0-9]+" required
+          >單價<input
+            v-model="draft.unitPrice"
+            inputmode="numeric"
+            pattern="[1-9][0-9]*"
+            title="請輸入大於零的整數"
+            required
         /></label>
         <label
           >數量<input v-model.number="draft.quantity" type="number" min="1" step="1" required
@@ -324,11 +325,11 @@ watch(orderId, loadOrder, { immediate: true })
             <dd class="money">{{ formatTwd(order.orderTotal) }}</dd>
           </div>
           <div>
-            <dt>已收款</dt>
+            <dt>已付金額</dt>
             <dd class="money">{{ formatTwd(order.receivedTotal) }}</dd>
           </div>
           <div>
-            <dt>差額</dt>
+            <dt>未付金額</dt>
             <dd class="money">{{ formatTwd(order.balance) }}</dd>
           </div>
           <div>
@@ -338,10 +339,6 @@ watch(orderId, loadOrder, { immediate: true })
           <div>
             <dt>收款狀態</dt>
             <dd>{{ order.isSettlementComplete ? '已完成' : '未完成' }}</dd>
-          </div>
-          <div>
-            <dt>收款模式</dt>
-            <dd>{{ order.settlementMode }}</dd>
           </div>
           <div>
             <dt>建立時間</dt>
@@ -371,18 +368,14 @@ watch(orderId, loadOrder, { immediate: true })
             >
               {{ order.isPurchased ? '標記為未購買' : '標記為已購買' }}
             </button>
-            <label
-              >收款完成模式
-              <select
-                :value="order.settlementMode"
-                :disabled="saving"
-                @change="updateSettlementMode"
-              >
-                <option value="auto">自動判定</option>
-                <option value="force_completed">強制完成</option>
-                <option value="force_pending">強制未完成</option>
-              </select>
-            </label>
+            <button
+              class="secondary-button"
+              type="button"
+              :disabled="saving"
+              @click="toggleSettlementStatus"
+            >
+              {{ order.isSettlementComplete ? '標記為未完成收款' : '標記為已完成收款' }}
+            </button>
             <button class="danger-button" type="button" :disabled="saving" @click="blockRequester">
               封鎖此請求方
             </button>
@@ -399,10 +392,21 @@ watch(orderId, loadOrder, { immediate: true })
               >金額<input
                 v-model="paymentDraft.amount"
                 inputmode="numeric"
+                pattern="-?[1-9][0-9]*"
+                title="請輸入非零整數，可為負數"
                 placeholder="可輸入負數"
                 required
             /></label>
-            <label>事由<input v-model="paymentDraft.reason" required /></label>
+            <label
+              >事由<input
+                v-model="paymentDraft.reason"
+                list="payment-reasons"
+                placeholder="選擇或輸入事由"
+                required
+            /></label>
+            <datalist id="payment-reasons">
+              <option v-for="reason in paymentReasonOptions" :key="reason" :value="reason" />
+            </datalist>
             <div class="form-actions">
               <button class="primary-button" type="submit" :disabled="saving">
                 {{ editingPaymentId ? '儲存修改' : '新增款項' }}
@@ -442,6 +446,23 @@ watch(orderId, loadOrder, { immediate: true })
               </div>
             </li>
           </ul>
+        </div>
+
+        <div class="action-section">
+          <h2>訂單操作紀錄</h2>
+          <ol v-if="detail?.activities.length" class="activity-list" aria-label="訂單操作紀錄">
+            <li v-for="activity in detail.activities" :key="activity.id">
+              <div class="activity-meta">
+                <strong>{{ activity.actionType }}</strong>
+                <small>
+                  {{ activity.actorDisplayName }}（{{ activity.actorDiscordUserId }}） ·
+                  {{ formatDate(activity.createdAt) }}
+                </small>
+              </div>
+              <p>{{ activity.detail }}</p>
+            </li>
+          </ol>
+          <p v-else>尚無操作紀錄。</p>
         </div>
 
         <div class="action-section">

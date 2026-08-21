@@ -67,9 +67,20 @@ export interface PaymentEntry {
   updatedAt: string
 }
 
+export interface OrderActivity {
+  id: Id
+  orderId: Id
+  actorDiscordUserId: Id
+  actorDisplayName: string
+  actionType: string
+  detail: string
+  createdAt: string
+}
+
 export interface OrderDetailResponse {
   order: Order
   paymentEntries: PaymentEntry[]
+  activities: OrderActivity[]
 }
 
 export interface UpdateOrderPayload {
@@ -87,10 +98,6 @@ export interface PaymentPayload {
 
 export interface PurchaseStatusPayload {
   isPurchased: boolean
-}
-
-export interface SettlementModePayload {
-  settlementMode: SettlementMode
 }
 
 export interface UserBlock {

@@ -1,7 +1,3 @@
-using System.Net;
-using System.Security.Claims;
-using System.Text.Json.Serialization;
-using System.Threading.RateLimiting;
 using Dapper;
 using DiscordBrokeBot.Api;
 using DiscordBrokeBot.Auth;
@@ -9,12 +5,11 @@ using DiscordBrokeBot.Features.Orders;
 using DiscordBrokeBot.Features.Orders.Models;
 using DiscordBrokeBot.Infrastructure.Database;
 using DiscordBrokeBot.Infrastructure.Discord;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
 using MySqlConnector;
+using System.Net;
+using System.Threading.RateLimiting;
 
 DefaultTypeMap.MatchNamesWithUnderscores = true;
 
@@ -124,10 +119,13 @@ builder.Services.AddOpenApi();
 builder.Services.AddSingleton<MySqlConnectionFactory>();
 builder.Services.AddSingleton<OrderStore>();
 builder.Services.AddSingleton<PaymentEntryStore>();
+builder.Services.AddSingleton<OrderActivityStore>();
 builder.Services.AddSingleton<UserBlockStore>();
 builder.Services.AddSingleton<OrderService>();
 builder.Services.AddSingleton<DiscordOAuthService>();
+builder.Services.AddSingleton<QuickLoginService>();
 builder.Services.AddSingleton<CsrfService>();
+builder.Services.AddSingleton<OrderNotificationService>();
 builder.Services.AddHostedService<DbUpMigrationHostedService>();
 builder.Services.AddDiscordBot();
 

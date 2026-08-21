@@ -13,6 +13,8 @@ public sealed record SettlementModeRequest(string SettlementMode);
 
 public sealed record PaymentEntryRequest(string Amount, string Reason);
 
+public sealed record QuickLoginRequest(string Token);
+
 public sealed record AuthUserResponse(
     string DiscordUserId,
     string DisplayName,

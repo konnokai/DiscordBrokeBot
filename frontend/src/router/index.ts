@@ -7,6 +7,7 @@ import LegalPage from '@/pages/LegalPage.vue'
 import LoginPage from '@/pages/LoginPage.vue'
 import OrderDetailPage from '@/pages/OrderDetailPage.vue'
 import OrdersPage from '@/pages/OrdersPage.vue'
+import QuickLoginPage from '@/pages/QuickLoginPage.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -14,6 +15,12 @@ const router = createRouter({
   routes: [
     { path: '/', redirect: '/orders/buying' },
     { path: '/login', name: 'login', component: LoginPage, meta: { public: true } },
+    {
+      path: '/quick-login',
+      name: 'quick-login',
+      component: QuickLoginPage,
+      meta: { public: true },
+    },
     { path: '/invite', name: 'invite', component: InvitePage, meta: { public: true } },
     {
       path: '/privacy',

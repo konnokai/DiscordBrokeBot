@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS orders (
     item_name VARCHAR(190) NOT NULL,
     unit_price BIGINT NOT NULL,
     quantity INT NOT NULL,
-    note TEXT NOT NULL,
+    note TEXT NULL,
     stall VARCHAR(190) NULL,
     is_purchased TINYINT(1) NOT NULL DEFAULT 0,
     purchased_at DATETIME(6) NULL,

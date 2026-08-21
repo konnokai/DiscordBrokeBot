@@ -24,6 +24,8 @@ pnpm --dir frontend dev
 
 部署用設定放在 `deploy/.env`，不要加入版控。必要鍵值請見 `deploy/.env.example`。後端使用 ASP.NET Core Cookie Authentication、Data Protection key volume、DbUp 與 MariaDB；不把 Discord access token 寫入資料庫。
 
+正式環境部署請參考 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)。
+
 ## 專案結構
 
 - `src/DiscordBrokeBot`: 單一 ASP.NET Core 程式，包含 API、Bot、OAuth、訂單服務、Dapper Store 與 migration。

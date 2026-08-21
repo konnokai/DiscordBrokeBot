@@ -70,6 +70,17 @@ public sealed record PaymentEntryRow
     public DateTime UpdatedAt { get; init; }
 }
 
+public sealed record OrderActivityRow
+{
+    public long Id { get; init; }
+    public long OrderId { get; init; }
+    public string ActorDiscordUserId { get; init; } = "";
+    public string ActorDisplayName { get; init; } = "";
+    public string ActionType { get; init; } = "";
+    public string Detail { get; init; } = "";
+    public DateTime CreatedAt { get; init; }
+}
+
 public sealed record UserBlockRow
 {
     public string BuyerDiscordUserId { get; init; } = "";
@@ -123,6 +134,15 @@ public sealed record PaymentEntryView(
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
+public sealed record OrderActivityView(
+    string Id,
+    string OrderId,
+    string ActorDiscordUserId,
+    string ActorDisplayName,
+    string ActionType,
+    string Detail,
+    DateTime CreatedAt);
+
 public sealed record OrderSummary(
     string AllOrderTotal,
     string UnpurchasedOrderTotal,
@@ -134,7 +154,8 @@ public sealed record OrdersResponse(IReadOnlyList<OrderView> Orders, OrderSummar
 
 public sealed record OrderDetailResponse(
     OrderView Order,
-    IReadOnlyList<PaymentEntryView> PaymentEntries);
+    IReadOnlyList<PaymentEntryView> PaymentEntries,
+    IReadOnlyList<OrderActivityView> Activities);
 
 public sealed record UserBlockView(
     string RequesterDiscordUserId,
@@ -170,8 +191,6 @@ public static class OrderRules
     {
         if (string.IsNullOrWhiteSpace(itemName))
             throw new OrderRuleException("物品名稱為必填。");
-        if (string.IsNullOrWhiteSpace(note))
-            throw new OrderRuleException("備註為必填。");
     }
 
     public static void ValidatePayment(long amount, string reason)

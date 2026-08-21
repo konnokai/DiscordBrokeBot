@@ -13,6 +13,28 @@ public static class AuthEndpoints
             Results.Redirect(oauth.CreateLoginUrl()))
             .RequireRateLimiting("auth");
 
+        app.MapPost("/auth/quick-login", async (
+            QuickLoginRequest request,
+            HttpContext context,
+            QuickLoginService quickLogin,
+            DiscordOAuthService oauth,
+            IOptions<AuthOptions> authOptions) =>
+        {
+            if (!quickLogin.TryConsume(request.Token, out var user))
+                return Results.BadRequest(new ApiError("快速登入連結無效或已過期。"));
+
+            await context.SignInAsync(
+                "DiscordCookie",
+                oauth.CreatePrincipal(user),
+                new AuthenticationProperties
+                {
+                    IsPersistent = false,
+                    AllowRefresh = false,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(authOptions.Value.CookieHours),
+                });
+            return Results.NoContent();
+        }).RequireRateLimiting("auth");
+
         app.MapGet("/auth/callback", async (
             string? code,
             string? state,
