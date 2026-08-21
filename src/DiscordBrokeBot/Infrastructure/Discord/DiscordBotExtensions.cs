@@ -140,9 +140,65 @@ public sealed class OrderInteractionModule(
         [Summary("stall", "販售攤位名稱或編號")]
         string? stall = null)
     {
+        await CreateOrderAsync(
+            Context.User,
+            buyer,
+            item,
+            unitPrice,
+            quantity,
+            note ?? "",
+            stall,
+            $"{Context.User.Username} ({Context.User.Id}) 已指定你為代購方");
+    }
+
+    [SlashCommand("buy", "指定自己為代購方並替委託人建立訂單")]
+    [RequireContext(ContextType.Guild)]
+    public async Task BuyAsync(
+        [Summary("requester", "委託你代購的 Discord 使用者")]
+        IUser requester,
+        [Summary("item", "需要代購的物品名稱")]
+        string item,
+        [Summary("unit-price", "大於零的新台幣單價")]
+        long unitPrice,
+        [Summary("quantity", "需要購買的數量")]
+        int quantity,
+        [Summary("note", "訂單備註")]
+        string? note = null,
+        [Summary("stall", "販售攤位名稱或編號")]
+        string? stall = null)
+    {
+        await CreateOrderAsync(
+            requester,
+            Context.User,
+            item,
+            unitPrice,
+            quantity,
+            note ?? "",
+            stall,
+            $"{Context.User.Username} ({Context.User.Id}) 已替你建立訂單，並指定自己為代購方");
+    }
+
+    private async Task CreateOrderAsync(
+        IUser requester,
+        IUser buyer,
+        string item,
+        long unitPrice,
+        int quantity,
+        string note,
+        string? stall,
+        string notificationDescription)
+    {
         if (!await AllowAsync("add"))
             return;
         await DeferAsync(ephemeral: true);
+        if (requester.IsBot)
+        {
+            await FollowupAsync(
+                embed: BuildEmbed("無法建立訂單", "不可指定 Bot 帳號為委託人。"),
+                ephemeral: true);
+            return;
+        }
+
         if (buyer.IsBot)
         {
             await FollowupAsync(
@@ -161,8 +217,8 @@ public sealed class OrderInteractionModule(
         }
 
         var command = new CreateOrderCommand(
-            Context.User.Id.ToString(),
-            Context.User.Username,
+            requester.Id.ToString(),
+            requester.Username,
             buyer.Id.ToString(),
             buyer.Username,
             guild.Id.ToString(),
@@ -170,18 +226,19 @@ public sealed class OrderInteractionModule(
             item,
             unitPrice,
             quantity,
-            note ?? "",
+            note,
             stall);
         var order = await orderService.CreateAsync(command, CancellationToken.None);
 
         var dmWarning = "";
-        if (buyer.Id != Context.User.Id)
+        var notificationUser = Context.User.Id == requester.Id ? buyer : requester;
+        if (notificationUser.Id != Context.User.Id)
         {
             try
             {
                 EmbedBuilder embedBuilder = new EmbedBuilder()
                     .WithTitle("訂單建立通知")
-                    .WithDescription($"{Context.User.Username} ({Context.User.Id}) 已指定你為代購方")
+                    .WithDescription(notificationDescription)
                     .AddField("訂單編號", $"#{order.Id}")
                     .AddField("商品名稱", order.ItemName)
                     .AddField("單價", $"NT$ {order.UnitPrice}")
@@ -194,12 +251,15 @@ public sealed class OrderInteractionModule(
                 if (!string.IsNullOrEmpty(order.Note))
                     embedBuilder.AddField("備註", order.Note);
 
-                await buyer.SendMessageAsync(embed: embedBuilder.Build());
+                await notificationUser.SendMessageAsync(embed: embedBuilder.Build());
             }
             catch (Exception exception)
             {
-                logger.LogWarning(exception, "Could not send order creation DM to {BuyerId}.", buyer.Id);
-                dmWarning = "\n但無法傳送私訊通知代購方。";
+                logger.LogWarning(
+                    exception,
+                    "Could not send order creation DM to {UserId}.",
+                    notificationUser.Id);
+                dmWarning = "\n但無法傳送私訊通知另一方。";
             }
         }
 
