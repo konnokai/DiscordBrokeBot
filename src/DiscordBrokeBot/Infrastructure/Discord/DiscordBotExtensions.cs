@@ -239,6 +239,7 @@ public sealed class OrderInteractionModule(
                 EmbedBuilder embedBuilder = new EmbedBuilder()
                     .WithTitle("訂單建立通知")
                     .WithDescription(notificationDescription)
+                    .WithFooter("可使用 /order link 指令快速登入前端查閱訂單。")
                     .AddField("訂單編號", $"#{order.Id}")
                     .AddField("商品名稱", order.ItemName)
                     .AddField("單價", $"NT$ {order.UnitPrice}")
