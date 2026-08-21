@@ -119,7 +119,7 @@ sudo systemctl reload nginx
 chitu.konnokai.me
 ```
 
-`frontend/public/_redirects` 已提供 SPA fallback，因此 `/orders/...`、`/quick-login`、`/privacy` 與 `/tos` 重新整理時仍會回到 Vue entrypoint。
+前端沒有 top-level `404.html`，Cloudflare Pages 會自動啟用 SPA fallback，因此 `/orders/...`、`/quick-login`、`/privacy` 與 `/tos` 重新整理時仍會回到 Vue entrypoint。不要新增 `/* /index.html 200` 的 `_redirects` 規則，Wrangler 會將它判定為無限迴圈。
 
 ## 5. 驗證清單
 
