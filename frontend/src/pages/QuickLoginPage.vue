@@ -20,9 +20,10 @@ onMounted(async () => {
     await exchangeQuickLoginToken(token)
     await refreshAuth()
     if (auth.user) await router.replace({ name: 'buying' })
-    else message.value = auth.error || '快速登入未完成。'
+    else message.value = auth.error || '快速登入失敗，請回到登入頁再試一次。'
   } catch (error) {
-    message.value = error instanceof Error ? error.message : '快速登入未完成。'
+    message.value =
+      error instanceof Error ? error.message : '快速登入失敗，請回到登入頁再試一次。'
   }
 })
 </script>

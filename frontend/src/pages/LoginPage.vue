@@ -16,12 +16,10 @@ function startLogin(): void {
 <template>
   <section class="narrow-page">
     <p class="eyebrow">Discord 代購訂單帳本</p>
-    <h1>登入後管理你的訂單</h1>
-    <p>使用 Discord 帳號登入。本站不建立密碼，也不在瀏覽器儲存 Discord access token。</p>
-    <p v-if="route.query.redirect" class="notice">請先登入後繼續操作。</p>
+    <p v-if="route.query.redirect" class="notice">請先登入後繼續操作</p>
     <p v-if="auth.error" class="notice error" role="alert">{{ auth.error }}</p>
     <p v-if="!oauthUrl" class="notice error" role="alert">
-      尚未設定 VITE_API_BASE_URL，無法開始 Discord 登入。
+      目前尚未設定登入服務，無法使用 Discord 登入。
     </p>
     <button class="primary-button" type="button" :disabled="!oauthUrl" @click="startLogin">
       <i class="fa-brands fa-discord" aria-hidden="true"></i>

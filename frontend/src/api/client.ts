@@ -13,7 +13,7 @@ const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')
 
 function apiUrl(path: string): string {
   if (!configuredBaseUrl) {
-    throw new ApiError('尚未設定 VITE_API_BASE_URL，無法連線至 API。')
+    throw new ApiError('尚未設定服務連線網址，目前無法連線。')
   }
   return `${configuredBaseUrl}${path}`
 }
@@ -32,7 +32,7 @@ async function readError(response: Response): Promise<string> {
   } catch {
     // 非 JSON 的 proxy 或伺服器錯誤仍需提供可理解訊息。
   }
-  return `API 請求失敗 (${response.status})。`
+  return `請求失敗（${response.status}）。`
 }
 
 /**
@@ -48,7 +48,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
       headers: { Accept: 'application/json', ...init.headers },
     })
   } catch {
-    throw new ApiError('無法連線至 API。請確認後端已啟動，或稍後再試。')
+    throw new ApiError('目前無法連線到服務，請確認服務已啟動，或稍後再試。')
   }
 
   if (!response.ok) {
@@ -84,7 +84,7 @@ export async function exchangeQuickLoginToken(token: string): Promise<void> {
       body: JSON.stringify({ token }),
     })
   } catch {
-    throw new ApiError('無法連線至 API。請確認後端已啟動，或稍後再試。')
+    throw new ApiError('目前無法連線到服務，請確認服務已啟動，或稍後再試。')
   }
 
   if (!response.ok) throw new ApiError(await readError(response), response.status)

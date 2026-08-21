@@ -12,7 +12,7 @@ onMounted(async () => {
   if (auth.user) {
     await router.replace({ name: 'buying' })
   } else {
-    message.value = auth.error || '登入未完成。請返回登入頁重新嘗試。'
+    message.value = auth.error || '登入未完成，請回到登入頁再試一次。'
   }
 })
 </script>

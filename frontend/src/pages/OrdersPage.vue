@@ -109,10 +109,10 @@ watch(
       </div>
     </div>
 
-    <div v-if="data" class="summary receipt-divider" aria-label="後端計算的訂單摘要">
+    <div v-if="data" class="summary receipt-divider" aria-label="訂單摘要">
       <dl>
         <div>
-          <dt>全部總額</dt>
+          <dt>全部訂單總額</dt>
           <dd class="money">{{ formatTwd(data.summary.allOrderTotal) }}</dd>
         </div>
         <div>
@@ -166,12 +166,12 @@ watch(
             <div>
               <dt>狀態</dt>
               <dd>
-                {{ order.isPurchased ? '已購買' : '待購買' }} /
+                {{ order.isPurchased ? '已購買' : '尚未購買' }} /
                 {{ order.isSettlementComplete ? '已完成' : '未完成' }}
               </dd>
             </div>
           </dl>
-          <time :datetime="order.updatedAt">更新 {{ formatDate(order.updatedAt) }}</time>
+          <time :datetime="order.updatedAt">更新時間：{{ formatDate(order.updatedAt) }}</time>
         </RouterLink>
       </li>
     </ol>

@@ -35,7 +35,7 @@ async function addBlock(): Promise<void> {
       method: 'POST',
     })
     requesterId.value = ''
-    if (await loadBlocks()) showToast('已更新封鎖名單。')
+    if (await loadBlocks()) showToast('已加入封鎖名單。')
   } catch (reason) {
     showToast(reason instanceof Error ? reason.message : '封鎖失敗。', 'error')
   } finally {
@@ -44,7 +44,7 @@ async function addBlock(): Promise<void> {
 }
 
 async function removeBlock(block: UserBlock): Promise<void> {
-  if (!window.confirm(`確定解除封鎖「${block.requesterDisplayName}」？`)) return
+  if (!window.confirm(`確定要解除「${block.requesterDisplayName}」的封鎖嗎？`)) return
   saving.value = true
   try {
     await apiMutation<void>(`/api/blocks/${encodeURIComponent(block.requesterDiscordUserId)}`, {
@@ -73,7 +73,7 @@ onMounted(loadBlocks)
         重新整理
       </button>
     </div>
-    <p>封鎖只會拒絕對方建立未來訂單，不會改變既有訂單或款項。</p>
+    <p>封鎖後，對方無法建立新的訂單；既有訂單和款項不受影響。</p>
     <form class="inline-form" @submit.prevent="addBlock">
       <label for="requester-id">請求方 Discord UID</label>
       <input
@@ -90,7 +90,7 @@ onMounted(loadBlocks)
       <li v-for="block in blocks" :key="block.requesterDiscordUserId">
         <div>
           <strong>{{ block.requesterDisplayName }}</strong>
-          <small>UID: {{ block.requesterDiscordUserId }} - {{ formatDate(block.createdAt) }}</small>
+          <small>UID：{{ block.requesterDiscordUserId }}，加入時間：{{ formatDate(block.createdAt) }}</small>
         </div>
         <button class="danger-button" type="button" :disabled="saving" @click="removeBlock(block)">
           解除封鎖

@@ -113,7 +113,9 @@ async function toggleSettlementStatus(): Promise<void> {
   await updateBuyerAction(
     '/settlement-mode',
     { settlementMode },
-    order.value.isSettlementComplete ? '已標記為未完成收款。' : '已標記為完成收款。',
+    order.value.isSettlementComplete
+      ? '已將收款狀態標記為「未完成」。'
+      : '已將收款狀態標記為「已完成」。',
   )
 }
 
@@ -210,7 +212,7 @@ async function savePayment(): Promise<void> {
 }
 
 async function deletePayment(payment: PaymentEntry): Promise<void> {
-  if (!window.confirm(`確定永久刪除「${payment.reason}」這筆款項紀錄？`)) return
+  if (!window.confirm(`確定要永久刪除「${payment.reason}」的款項紀錄嗎？`)) return
   saving.value = true
   try {
     await apiMutation<void>(`/api/payment-entries/${encodeURIComponent(payment.id)}`, {
@@ -240,7 +242,7 @@ async function blockRequester(): Promise<void> {
         method: 'POST',
       },
     )
-    showToast(`已封鎖 ${order.value.requesterDisplayName} 的未來訂單請求。`)
+    showToast(`已封鎖 ${order.value.requesterDisplayName} 的新訂單請求。`)
   } catch (reason) {
     showToast(reason instanceof Error ? reason.message : '封鎖失敗。', 'error')
   } finally {
@@ -374,7 +376,7 @@ watch(orderId, loadOrder, { immediate: true })
               :disabled="saving"
               @click="toggleSettlementStatus"
             >
-              {{ order.isSettlementComplete ? '標記為未完成收款' : '標記為已完成收款' }}
+              {{ order.isSettlementComplete ? '標記為收款未完成' : '標記為收款完成' }}
             </button>
             <button class="danger-button" type="button" :disabled="saving" @click="blockRequester">
               封鎖此請求方
@@ -469,7 +471,7 @@ watch(orderId, loadOrder, { immediate: true })
           <h2>訂單狀態</h2>
           <p v-if="order.archivedAt">
             此訂單已於
-            {{ formatDate(order.archivedAt) }} 封存。封存時不可編輯、管理款項或變更購買狀態。
+            {{ formatDate(order.archivedAt) }} 封存。封存後無法編輯、管理款項或變更購買狀態。
           </p>
           <button
             v-if="order.permissions.canArchive || order.permissions.canRestore"

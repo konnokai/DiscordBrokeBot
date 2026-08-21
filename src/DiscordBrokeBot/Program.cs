@@ -155,7 +155,7 @@ app.Use(async (context, next) =>
     catch (InvalidOperationException exception)
     {
         app.Logger.LogError(exception, "Application operation failed.");
-        await WriteErrorAsync(context, StatusCodes.Status503ServiceUnavailable, "服務目前尚未完成設定，請稍後再試。");
+        await WriteErrorAsync(context, StatusCodes.Status503ServiceUnavailable, "服務尚未完成設定，請稍後再試。");
     }
 });
 app.UseAuthentication();
@@ -170,7 +170,7 @@ app.Use(async (context, next) =>
         var csrf = context.RequestServices.GetRequiredService<CsrfService>();
         if (actorId is null || !csrf.IsValid(actorId, context.Request.Headers["X-CSRF-Token"].FirstOrDefault()))
         {
-            await WriteErrorAsync(context, StatusCodes.Status403Forbidden, "CSRF token 無效或缺失。");
+            await WriteErrorAsync(context, StatusCodes.Status403Forbidden, "CSRF token 無效或未提供。");
             return;
         }
     }

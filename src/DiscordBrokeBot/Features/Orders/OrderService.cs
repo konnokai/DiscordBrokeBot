@@ -36,7 +36,7 @@ public sealed class OrderService(
             command.RequesterDiscordUserId,
             command.RequesterDisplayName,
             "建立訂單",
-            $"建立訂單：{view.ItemName} x {view.Quantity}，單價 NT$ {view.UnitPrice}，總額 NT$ {view.OrderTotal}。",
+            $"建立訂單：{view.ItemName} × {view.Quantity}，單價 NT$ {view.UnitPrice}，總額 NT$ {view.OrderTotal}。",
             cancellationToken);
         return view;
     }
@@ -148,7 +148,7 @@ public sealed class OrderService(
                 actorId,
                 ActorName(after, actorId),
                 "購買狀態變更",
-                $"購買狀態：{PurchaseStatus(before.IsPurchased)} -> {PurchaseStatus(after.IsPurchased)}。",
+                $"購買狀態：{PurchaseStatus(before.IsPurchased)} → {PurchaseStatus(after.IsPurchased)}。",
                 cancellationToken);
             await notificationService.NotifyPurchaseStatusAsync(after, actorId);
         }
@@ -179,7 +179,7 @@ public sealed class OrderService(
                 actorId,
                 ActorName(after, actorId),
                 "收款狀態變更",
-                $"收款狀態：{SettlementStatus(before)} -> {SettlementStatus(after)}。",
+                $"收款狀態：{SettlementStatus(before)} → {SettlementStatus(after)}。",
                 cancellationToken);
             await notificationService.NotifySettlementStatusAsync(after, actorId);
         }
@@ -423,15 +423,15 @@ public sealed class OrderService(
     {
         var changes = new List<string>();
         if (before.ItemName != after.ItemName)
-            changes.Add($"商品：{before.ItemName} -> {after.ItemName}");
+            changes.Add($"商品：{before.ItemName} → {after.ItemName}");
         if (OrderRules.Money(before.UnitPrice) != after.UnitPrice)
-            changes.Add($"單價：NT$ {before.UnitPrice} -> NT$ {after.UnitPrice}");
+            changes.Add($"單價：NT$ {before.UnitPrice} → NT$ {after.UnitPrice}");
         if (before.Quantity != after.Quantity)
-            changes.Add($"數量：{before.Quantity} -> {after.Quantity}");
+            changes.Add($"數量：{before.Quantity} → {after.Quantity}");
         if (before.Note != after.Note)
             changes.Add("備註已變更");
         if (before.Stall != after.Stall)
-            changes.Add($"攤位：{before.Stall ?? "未填寫"} -> {after.Stall ?? "未填寫"}");
+            changes.Add($"攤位：{before.Stall ?? "未填寫"} → {after.Stall ?? "未填寫"}");
         return changes.Count == 0 ? "訂單內容未變更。" : string.Join("；", changes) + "。";
     }
 
@@ -466,6 +466,6 @@ public sealed class OrderService(
     private static void ValidateDiscordId(string value, string label)
     {
         if (!ulong.TryParse(value, out var parsed) || parsed == 0)
-            throw new OrderRuleException($"{label}格式不正確。");
+            throw new OrderRuleException($"「{label}」格式不正確。");
     }
 }

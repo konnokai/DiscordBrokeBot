@@ -15,7 +15,7 @@ public sealed class OrderNotificationService(
             actorId,
             new EmbedBuilder()
                 .WithTitle("訂單購買狀態更新")
-                .WithDescription($"{ActorName(order, actorId)} 已將訂單 #{order.Id} 標記為{(order.IsPurchased ? "已購買" : "尚未購買")}。")
+                .WithDescription($"{ActorName(order, actorId)} 已將訂單 #{order.Id} 的購買狀態更新為「{(order.IsPurchased ? "已購買" : "尚未購買")}」。")
                 .AddField("商品", order.ItemName)
                 .Build());
 
@@ -25,7 +25,7 @@ public sealed class OrderNotificationService(
             actorId,
             new EmbedBuilder()
                 .WithTitle("訂單收款狀態更新")
-                .WithDescription($"{ActorName(order, actorId)} 已將訂單 #{order.Id} 的收款標記為{(order.IsSettlementComplete ? "已完成" : "未完成")}。")
+                .WithDescription($"{ActorName(order, actorId)} 已將訂單 #{order.Id} 的收款狀態更新為「{(order.IsSettlementComplete ? "已完成" : "未完成")}」。")
                 .AddField("商品", order.ItemName)
                 .AddField("未付金額", $"NT$ {order.Balance}")
                 .Build());
@@ -40,7 +40,7 @@ public sealed class OrderNotificationService(
             actorId,
             new EmbedBuilder()
                 .WithTitle($"{action}通知")
-                .WithDescription($"{ActorName(order, actorId)} 已操作訂單 #{order.Id} 的款項紀錄。")
+                .WithDescription($"{ActorName(order, actorId)} 已變更訂單 #{order.Id} 的款項紀錄。")
                 .AddField("商品", order.ItemName)
                 .AddField("變更內容", detail)
                 .AddField("收款狀態", order.IsSettlementComplete ? "已完成" : "未完成")

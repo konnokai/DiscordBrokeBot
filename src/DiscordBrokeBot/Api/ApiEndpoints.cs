@@ -235,6 +235,6 @@ public static class ApiEndpoints
             return fallback;
         if (bool.TryParse(value, out var parsed))
             return parsed;
-        throw new OrderRuleException($"{label}格式不正確。");
+        throw new OrderRuleException($"「{label}」格式不正確。");
     }
 }

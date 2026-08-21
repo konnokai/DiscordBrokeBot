@@ -96,7 +96,7 @@ public sealed class DiscordBotHostedService(
                 await interaction.RespondAsync(
                     embed: new EmbedBuilder()
                         .WithTitle("操作失敗")
-                        .WithDescription("操作失敗，請稍後再試。")
+                        .WithDescription("請稍後再試。")
                         .Build(),
                     ephemeral: true);
         }
@@ -194,7 +194,7 @@ public sealed class OrderInteractionModule(
         if (requester.IsBot)
         {
             await FollowupAsync(
-                embed: BuildEmbed("無法建立訂單", "不可指定 Bot 帳號為委託人。"),
+                embed: BuildEmbed("無法建立訂單", "委託人不能是 Bot 帳號。"),
                 ephemeral: true);
             return;
         }
@@ -202,7 +202,7 @@ public sealed class OrderInteractionModule(
         if (buyer.IsBot)
         {
             await FollowupAsync(
-                embed: BuildEmbed("無法建立訂單", "不可指定 Bot 帳號為代購方。"),
+                embed: BuildEmbed("無法建立訂單", "代購方不能是 Bot 帳號。"),
                 ephemeral: true);
             return;
         }
@@ -239,7 +239,7 @@ public sealed class OrderInteractionModule(
                 EmbedBuilder embedBuilder = new EmbedBuilder()
                     .WithTitle("訂單建立通知")
                     .WithDescription(notificationDescription)
-                    .WithFooter("可使用 /order link 指令快速登入前端查閱訂單。")
+                    .WithFooter("使用 /order link 指令快速登入網站查看訂單。")
                     .AddField("訂單編號", $"#{order.Id}")
                     .AddField("商品名稱", order.ItemName)
                     .AddField("單價", $"NT$ {order.UnitPrice}")
@@ -260,7 +260,7 @@ public sealed class OrderInteractionModule(
                     exception,
                     "Could not send order creation DM to {UserId}.",
                     notificationUser.Id);
-                dmWarning = "\n但無法傳送私訊通知另一方。";
+                dmWarning = "\n不過，無法傳送私訊給另一方。";
             }
         }
 
@@ -284,7 +284,7 @@ public sealed class OrderInteractionModule(
         await FollowupAsync(embed: responseEmbedBuilder.Build(), ephemeral: true);
     }
 
-    [SlashCommand("link", "取得前端快速登入網址")]
+    [SlashCommand("link", "取得網站快速登入連結")]
     public async Task LinkAsync()
     {
         if (!await AllowAsync("link"))
@@ -293,8 +293,8 @@ public sealed class OrderInteractionModule(
         var url = quickLoginService.CreateUrl(Context.User.Id.ToString(), Context.User.Username);
         await RespondAsync(
             embed: BuildEmbed(
-                "前端快速登入",
-                $"[點此開啟前端]({url})\n連結 10 分鐘內有效且只能使用一次。"),
+                "網站快速登入",
+                $"[開啟網站]({url})\n這個連結 10 分鐘內有效，只能使用一次。"),
             ephemeral: true);
     }
 
